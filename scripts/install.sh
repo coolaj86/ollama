@@ -69,7 +69,6 @@ trap install_success EXIT
 
 configure_systemd() {
     status "Creating ollama systemd service..."
-    HOME=$(eval echo ~$(whoami))
     # create the directories the service will need
     mkdir -p $HOME/.config/systemd/user/
     mkdir -p $HOME/.ollama/logs/
