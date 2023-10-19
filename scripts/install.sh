@@ -112,7 +112,7 @@ migrate_systemd() {
 
         # If the service is running as the "ollama" user, stop it, copy content to the user's home, and remove it
         if [ "$SERVICE_USER" = "ollama" ]; then
-            status "Ollama service is currently running as 'ollama' user. Migrating..."
+            status "Detected a previous install of Ollama. Ollama will now run as your current user. Migrating models..."
             
             # Stop the service
             $SUDO systemctl stop ollama
