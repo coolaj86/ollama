@@ -166,7 +166,7 @@ migrate_systemd() {
 }
 
 # Setup an Ollama background service for the user if systemd is available along with the tools required to get information about the current user.
-if available systemctl whoami id find awk read; then
+if available systemctl whoami id find awk read realpath; then
     # Ollama used to be installed as a systemd service running as the "ollama" user, remove that if it exists.
     migrate_systemd
     # Install the Ollama systemd service
