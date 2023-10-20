@@ -122,10 +122,9 @@ migrate_systemd() {
             # Remove the systemd service file
             $SUDO rm /etc/systemd/system/ollama.service
 
-            # Copy the contents of /usr/share/ollama to $HOME/.ollama if the directory doesn't exist
             if [ ! -d "$HOME/.ollama" ]; then
-                $SUDO mkdir "$HOME/.ollama"
-                $SUDO cp -r /usr/share/ollama/.ollama/* "$HOME/.ollama"
+                $SUDO mkdir -p "$HOME/.ollama/models"
+                $SUDO mv /usr/share/ollama/.ollama/models/* "$HOME/.ollama/models"
 
                 # Adjusting permissions and ownership after copying
                 $SUDO chown -R $(whoami):$(id -gn) "$HOME/.ollama"
