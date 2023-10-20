@@ -103,6 +103,35 @@ EOF
     esac
 }
 
+merge_folders() {
+    local src="$1"
+    local dest="$2"
+    local rel_path=""
+    local target=""
+
+    # The 'find' command recursively locates all items in the source directory.
+    # It uses '-print0' to separate each item with a null byte, which ensures accurate processing 
+    # even for filenames with special characters, spaces, or newlines.
+    #
+    # The 'awk' command then takes this output and transforms each null byte into a newline character.
+    # This allows us to easily process each item in the subsequent 'while' loop.
+    #
+    # 'IFS=' ensures that leading/trailing whitespace in filenames won't be trimmed in the 'read' command.
+    find "$src" -mindepth 1 -print0 | awk 'BEGIN { RS="\0"; OFS="\n" } { print }' | while IFS= read -r item; do
+        # Compute the relative path and target for each item
+        rel_path=$(realpath --relative-to="$src" "$item")
+        target="$dest/$rel_path"
+
+        # If it's a directory and doesn't exist in the target location, create it
+        if [ -d "$item" ] && [ ! -d "$target" ]; then
+            mkdir -p "$target"
+        # If it's a file and doesn't exist in the target location, move it
+        elif [ -f "$item" ] && [ ! -e "$target" ]; then
+            sudo mv "$item" "$target"
+        fi
+    done
+}
+
 migrate_systemd() {
     # Check if the ollama service exists and is running
     if systemctl is-active --quiet ollama; then
@@ -122,15 +151,12 @@ migrate_systemd() {
             # Remove the systemd service file
             $SUDO rm /etc/systemd/system/ollama.service
 
-            if [ ! -d "$HOME/.ollama" ]; then
-                $SUDO mkdir -p "$HOME/.ollama/models"
-                $SUDO mv /usr/share/ollama/.ollama/models/* "$HOME/.ollama/models"
-
-                # Adjusting permissions and ownership after copying
-                $SUDO chown -R $(whoami):$(id -gn) "$HOME/.ollama"
-                if [ -f "$HOME/.ollama/id_ed25519" ]; then
-                    chmod 600 "$HOME/.ollama/id_ed25519"
-                fi
+            $SUDO mkdir -p "$HOME/.ollama/models"
+            merge_folders /usr/share/ollama/.ollama/models "$HOME/.ollama/models"
+            # Adjusting permissions and ownership after copying
+            $SUDO chown -R $(whoami):$(id -gn) "$HOME/.ollama"
+            if [ -f "$HOME/.ollama/id_ed25519" ]; then
+                chmod 600 "$HOME/.ollama/id_ed25519"
             fi
 
             # Reload systemd configuration to recognize service removal
